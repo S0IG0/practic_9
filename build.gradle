@@ -1,0 +1,73 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Указываем имя нашего приложения
+group 'com.example'
+version '1.0-SNAPSHOT'
+
+// Определяем основные исходные файлы проекта
+sourceSets {
+    main {
+        java {
+            srcDirs 'src/main/java'
+        }
+    }
+}
+
+// Создаем jar-файл на основе классов проекта
+jar {
+    println "jar"
+    archiveBaseName.set("my-app")
+    archiveVersion.set("1.0")
+    from(sourceSets.main.output)
+    manifest {
+        attributes("Main-Class": "org.example.Main")
+    }
+}
+
+// Определяем репозитории для сборки зависимостей
+repositories {
+    mavenCentral()
+}
+
+// Копируем jar
+task copyJar(type: Copy) {
+    println "copyJar"
+    from 'build/libs'
+    into 'jarfile'
+    include '*.jar'
+}
+
+// Создаем контейнер для jar
+task buildDocker(type: Exec) {
+    println "buildDocker"
+    workingDir 'jarfile'
+    commandLine 'docker', 'build', '-t', 'my-app', '.'
+}
+
+// Запускаем контейнер
+task runDocker(type: Exec) {
+    println "runDocker"
+    commandLine 'docker', 'run', '-p', '8080:8080', 'my-app'
+}
+
+runDocker.dependsOn(buildDocker)
+buildDocker.dependsOn(copyJar)
+copyJar.dependsOn(jar)
